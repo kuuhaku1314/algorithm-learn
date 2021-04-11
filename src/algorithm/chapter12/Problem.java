@@ -13,7 +13,10 @@ public class Problem {
         E value;
         TreeNode<E> left;
         TreeNode<E> right;
-
+        /**
+         * 二叉搜索树专用字段
+         */
+        TreeNode<E> parent;
         public TreeNode(E value) {
             this.value = value;
         }
@@ -120,7 +123,186 @@ public class Problem {
         }
     }
 
+    /**
+     * 12.1-3 中序遍历非递归3，不使用栈
+     * @param treeNode
+     * @param <E>
+     */
+    public static <E> void inOrderTraversalThree(TreeNode<E> treeNode) {
+        TreeNode<E> temp;
+        while (treeNode != null) {
+            temp = treeNode.left;
+            if (temp != null) {
+                while (temp.right != null && temp.right != treeNode) {
+                    temp = temp.right;
+                }
+                if (temp.right == null) {
+                    temp.right = treeNode;
+                    treeNode = treeNode.left;
+                    continue;
+                } else {
+                    temp.right = null;
+                }
+            }
+            System.out.println(treeNode.value);
+            treeNode = treeNode.right;
+        }
+    }
 
+    public <E extends Comparable<E>> TreeNode<E> iterativeTreeSearch(TreeNode<E> treeNode, E e) {
+        while (treeNode != null && treeNode.value.compareTo(e) != 0) {
+            if (treeNode.value.compareTo(e) > 0) {
+                treeNode = treeNode.left;
+            } else {
+                treeNode = treeNode.right;
+            }
+        }
+        return treeNode;
+    }
+
+    /**
+     * 12.2-2 递归版求最小值
+     * @param treeNode
+     * @param <E>
+     * @return
+     */
+    public <E extends Comparable<E>> TreeNode<E> treeMinimum (TreeNode<E> treeNode) {
+        if (treeNode.left != null) {
+            treeNode = treeNode.left;
+            return treeMinimum(treeNode);
+        }
+        return treeNode;
+    }
+
+    /**
+     * 12.2-2 递归版求最大值
+     * @param treeNode
+     * @param <E>
+     * @return
+     */
+    public <E extends Comparable<E>> TreeNode<E> treeMaximum (TreeNode<E> treeNode) {
+        if (treeNode.right != null) {
+            treeNode = treeNode.right;
+            return treeMaximum(treeNode);
+        }
+        return treeNode;
+    }
+
+    /**
+     * 求节点的后驱，即大于等于节点值的最小一个
+     * @param treeNode
+     * @param <E>
+     * @return
+     */
+    public <E extends Comparable<E>> TreeNode<E> treeSuccessor(TreeNode<E> treeNode) {
+        if (treeNode.right != null) {
+            return treeMinimum(treeNode.right);
+        }
+        TreeNode<E> p = treeNode.parent;
+        while (p != null && treeNode.equals(p.right)) {
+            treeNode = p;
+            p = p.parent;
+        }
+        return p;
+    }
+
+    /**
+     * 12.2-3 求节点的前驱，即小于等于节点值的最大一个
+     * @param treeNode
+     * @param <E>
+     * @return
+     */
+    public <E extends Comparable<E>> TreeNode<E> treePredecessor(TreeNode<E> treeNode) {
+        if (treeNode.left != null) {
+            return treeMaximum(treeNode.left);
+        }
+        TreeNode<E> p = treeNode.parent;
+        while (p != null && treeNode.equals(p.left)) {
+            treeNode = p;
+            p = p.parent;
+        }
+        return p;
+    }
+
+    /**
+     * 12.3-1 二叉搜索树的递归插入
+     * @param treeNode
+     * @param e
+     * @param <E>
+     */
+    public <E extends Comparable<E>> void treeInsert(TreeNode<E> treeNode, E e) {
+        if (e.compareTo(treeNode.value) > 0) {
+            if (treeNode.right == null) {
+                treeNode.right = new TreeNode<>(e);
+            } else {
+                treeInsert(treeNode.right, e);
+            }
+        } else {
+            if (treeNode.left == null) {
+                treeNode.left = new TreeNode<>(e);
+            } else {
+                treeInsert(treeNode.left, e);
+            }
+        }
+    }
+
+    /**
+     * 二叉搜索树的节点删除，如果树只有一个节点没法删除节点，毕竟外部的引用没法去掉
+     * @param root
+     * @param e
+     * @param <E>
+     * @return
+     */
+    public <E extends Comparable<E>> boolean treeDelete(TreeNode<E> root, E e) {
+        if (root.right == null && root.left == null && root.value.equals(e)) {
+            return false;
+        }
+        TreeNode<E> treeNode = iterativeTreeSearch(root, e);
+        if (treeNode == null) {
+            return false;
+        }
+        if (treeNode.left == null && treeNode.right == null) {
+            if (treeNode.parent.right == treeNode) {
+                treeNode.parent.right = null;
+            } else {
+                treeNode.parent.left = null;
+            }
+        } else if (treeNode.left == null || treeNode.right == null) {
+            TreeNode<E> child = treeNode.left == null ? treeNode.right : treeNode.left;
+            if (treeNode.parent.right == treeNode) {
+                treeNode.parent.right = child;
+            } else {
+                treeNode.parent.left = child;
+            }
+            child.parent = treeNode.parent;
+        } else {
+            TreeNode<E> successor = treeSuccessor(treeNode);
+            TreeNode<E> leftTree = treeNode.left;
+            TreeNode<E> rightTree = treeNode.right;
+            if (successor.parent.right == successor) {
+                successor.parent.right = null;
+            } else {
+                successor.parent.left = null;
+            }
+            if (rightTree == successor) {
+                successor.left = leftTree;
+            } else {
+                successor.parent.left = successor.right;
+                if (successor.right != null) {
+                    successor.right.parent = successor.parent;
+                }
+                successor.left = leftTree;
+                successor.right = rightTree;
+            }
+            if (treeNode.parent.right == treeNode) {
+                treeNode.parent.right = successor;
+            } else {
+                treeNode.parent.left = successor;
+            }
+            successor.parent = treeNode.parent;
+        }
+        return true;
+    }
 
     public static void main(String[] args) {
         TreeNode<Integer> treeNode1 = new TreeNode<>(6);
@@ -138,6 +320,6 @@ public class Problem {
         treeNode3.right = treeNode6;
         treeNode3.left = treeNode7;
         treeNode6.left = treeNode8;
-        postorderTraversal(treeNode1);
+        inOrderTraversalThree(treeNode1);
     }
 }
